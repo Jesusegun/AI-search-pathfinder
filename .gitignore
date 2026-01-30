@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build outputs (keep build/web for deployment)
+*.egg-info/
+dist/
+build/web-cache/
+
+# OS files
+.DS_Store
+Thumbs.db
