@@ -458,19 +458,19 @@ class WinnerBanner:
         @param winner_name: Name of winning algorithm
         @param reason: Reason for winning
         """
-        self.message = f"🏆 WINNER: {winner_name} ({reason})"
+        self.message = f"WINNER: {winner_name} ({reason})"
         self.visible = True
         self.color = COLOR_SUCCESS
     
     def show_tie(self, reason):
         """Show tie announcement."""
-        self.message = f"🤝 TIE: {reason}"
+        self.message = f"TIE: {reason}"
         self.visible = True
         self.color = COLOR_WARNING
     
     def show_no_path(self, algorithm_name):
         """Show no path found message."""
-        self.message = f"❌ {algorithm_name}: No path found!"
+        self.message = f"{algorithm_name}: No path found!"
         self.visible = True
         self.color = COLOR_FAILURE
     
