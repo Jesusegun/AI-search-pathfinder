@@ -1,4 +1,6 @@
-<html lang="en-us"><script src="https://pygame-web.github.io/archives/0.9/pythons.js" type=module id=site data-LINES=57 data-CONSOLE=25 data-python=python3.12 data-os=vtx,fs,snd,gui async defer>#<!--
+<html lang="en-us">
+<script src="https://pygame-web.github.io/archives/0.9/pythons.js" type=module id=site data-LINES=57 data-CONSOLE=25
+    data-python=python3.12 data-os=vtx,fs,snd,gui async defer>#<!--
 
 print("""
 Loading pathfinder from pathfinder.apk
@@ -122,8 +124,13 @@ async def custom_site():
         pygame.draw.rect(screen,(0,255,0), ( marginx, marginy, track.pos*slot, uy(90)) )
 
     # wait until zip mount + overlayfs is complete
+    platform.window.updateLoadingStatus("Downloading game assets...")
     while not track.ready:
         pg_bar(track.pos)
+        # Update HTML5 progress bar too
+        if track.len:
+            progress_pct = int((track.pos / track.len) * 50)  # 0-50%
+            platform.window.updateLoadingProgress(progress_pct)
         compose()
         await asyncio.sleep(.1)
 
@@ -132,14 +139,22 @@ async def custom_site():
     compose()
 
 
+    platform.window.updateLoadingStatus("Mounting filesystem...")
+    platform.window.updateLoadingProgress(60)
+
     # preloader will change dir and prepend it to sys.path
     platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
 
+    platform.window.updateLoadingStatus("Preloading modules...")
+    platform.window.updateLoadingProgress(70)
 
     # wait preloading complete
     # that includes images and wasm compilation of bundled modules
     while embed.counter()<0:
         await asyncio.sleep(.1)
+
+    platform.window.updateLoadingStatus("Initializing game engine...")
+    platform.window.updateLoadingProgress(85)
 
     main = appdir / "assets" / "main.py"
 
@@ -173,6 +188,8 @@ async def custom_site():
         pg_bar(track.len)
         screen.blit(prompt, ( marginx+ ux(80), marginy - uy(10) ) )
         compose()
+        platform.window.updateLoadingStatus("Click anywhere to start!")
+        platform.window.updateLoadingProgress(95)
         print("""
         * Waiting for media user engagement : please click/touch page *
     """)
@@ -182,6 +199,10 @@ async def custom_site():
     # cleanup
     screen.fill( (0,0,0,0) )
     pygame.display.flip()
+
+    platform.window.updateLoadingStatus("Starting game...")
+    platform.window.updateLoadingProgress(100)
+    platform.window.hideLoadingOverlay()
 
     await shell.runpy(main, callback=ui_callback)
 
@@ -211,7 +232,9 @@ asyncio.run( custom_site() )
 #
 # do not alter that comment block it is separating python code from html code
 # =============================================================================
-# --></script><head><!--
+# --></script>
+
+<head><!--
 //=============================================================================
 //
 //
@@ -225,28 +248,29 @@ asyncio.run( custom_site() )
 {{cookiecutter.comment}}
     {% endif %}
 
---><script type="application/javascript">
-// END BLOCK
+-->
+    <script type="application/javascript">
+        // END BLOCK
 
 
 
-// this dict is available under PyConfig.config from __main__
+        // this dict is available under PyConfig.config from __main__
 
-config = {
-    xtermjs : "1" ,
-    _sdl2 : "canvas",
-    user_canvas : 0,
-    user_canvas_managed : 0,
-    ume_block : 1,
-    can_close : 0,
-    archive : "pathfinder",
-    gui_debug : 3,
-    cdn : "https://pygame-web.github.io/archives/0.9/",
-    autorun : 0,
-    PYBUILD : "3.12"
-}
+        config = {
+            xtermjs: "1",
+            _sdl2: "canvas",
+            user_canvas: 0,
+            user_canvas_managed: 0,
+            ume_block: 1,
+            can_close: 0,
+            archive: "pathfinder",
+            gui_debug: 3,
+            cdn: "https://pygame-web.github.io/archives/0.9/",
+            autorun: 0,
+            PYBUILD: "3.12"
+        }
 
-</script>
+    </script>
 
     <title>pathfinder</title>
     <meta charset="UTF-8">
@@ -254,7 +278,7 @@ config = {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="viewport" content="height=device-height, initial-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
 
     <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/pythonrc.py">
     <link rel="prefetch" href="https://pygame-web.github.io/archives/0.9/vt/xterm.js">
@@ -265,36 +289,138 @@ config = {
     <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
 
     <style>
-        #status {
-            display: inline-block;
-            vertical-align: top;
-            margin-top: 20px;
-            margin-left: 30px;
-            font-weight: bold;
-            color: rgb(120, 120, 120);
+        /* Loading Screen Styles */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #0f0f19;
+            overflow: hidden;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #0f0f19 0%, #1a1a2e 50%, #0f0f19 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(100, 180, 255, 0.2);
+            border-top: 4px solid #64c8ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 30px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-title {
+            color: #64c8ff;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+        }
+
+        .loading-subtitle {
+            color: #9090a0;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .loading-status {
+            color: #50ff78;
+            font-size: 14px;
+            margin-bottom: 15px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
         }
 
         #progress {
-            height: 20px;
+            height: 8px;
             width: 300px;
+            background-color: rgba(100, 100, 120, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            border: none;
+            appearance: none;
+            -webkit-appearance: none;
         }
 
-        div.emscripten { text-align: center; }
-        div.emscripten_border { border: 1px solid black; }
-        div.thick_border { border: 4px solid black; }
+        #progress::-webkit-progress-bar {
+            background-color: rgba(100, 100, 120, 0.3);
+            border-radius: 4px;
+        }
+
+        #progress::-webkit-progress-value {
+            background: linear-gradient(90deg, #3060c0 0%, #64c8ff 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        #progress::-moz-progress-bar {
+            background: linear-gradient(90deg, #3060c0 0%, #64c8ff 100%);
+            border-radius: 4px;
+        }
+
+        #status {
+            display: none;
+        }
+
+        #transfer {
+            display: none;
+        }
+
+        div.emscripten {
+            text-align: center;
+        }
+
+        div.emscripten_border {
+            border: 1px solid black;
+        }
+
+        div.thick_border {
+            border: 4px solid black;
+        }
 
         /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-        /* average size of droid screen 470dp x 320dp  */
         canvas.emscripten {
             border: 0px none;
             background-color: transparent;
             width: 100%;
             height: 100%;
             z-index: 5;
-
             padding: 0;
             margin: 0 auto;
-
             position: absolute;
             top: 0;
             bottom: 0;
@@ -302,21 +428,14 @@ config = {
             right: 0;
         }
 
-        body {
-            font-family: arial;
-            margin: 0;
-            padding: none;
-            background-color:powderblue;
-        }
-
-        .topright{
-           position:absolute;
-           top:0px;
-           right:0px;
+        .topright {
+            position: absolute;
+            top: 0px;
+            right: 0px;
         }
 
         .bottomright {
-            position:absolute;
+            position: absolute;
             top: 40%;
             right: 0px;
         }
@@ -327,17 +446,17 @@ config = {
             justify-content: center;
         }
 
-        .trinfo{
-           position:relative;
-           right:0px;
-           border: 1px solid black;
+        .trinfo {
+            position: relative;
+            right: 0px;
+            border: 1px solid black;
         }
 
-        .framed{
-           position:relative;
-           top:150px;
-           right:10px;
-           border: 1px solid black;
+        .framed {
+            position: relative;
+            top: 150px;
+            right: 10px;
+            border: 1px solid black;
         }
     </style>
 
@@ -347,24 +466,29 @@ config = {
 
 <body>
 
+    <!-- Enhanced Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-title">AI Pathfinding Arena</div>
+        <div class="loading-subtitle">Initializing visualization engine...</div>
+        <div class="loading-status" id="loading-status">Loading Python runtime</div>
+        <progress value="0" max="100" id="progress"></progress>
+    </div>
+
     <div id="transfer" align=center>
-<!--        <div class="spinner" id='spinner'></div> -->
+        <!--        <div class="spinner" id='spinner'></div> -->
         <div class="emscripten" id="status">Downloading...</div>
         <div class="emscripten">
-            <progress value="0" max="100" id="progress"></progress>
         </div>
     </div>
 
 
-    <canvas class="emscripten" id="canvas"
-width="1px"
-height="1px"
-    oncontextmenu="event.preventDefault()" tabindex=1>
+    <canvas class="emscripten" id="canvas" width="1px" height="1px" oncontextmenu="event.preventDefault()" tabindex=1>
     </canvas>
 
     <div id=html></div>
 
-    <div id=crt  class=bottomright >
+    <div id=crt class=bottomright>
 
         <div id="system" hidden>
             <div class="button-container">
@@ -378,7 +502,7 @@ height="1px"
                 <div id=load_min>min</div>
                 <div id=load_avg>avg</div>
                 <div id=load_max>max</div>
-              <button id="load_rst" disabled>RESET</button>
+                <button id="load_rst" disabled>RESET</button>
             </div>
 
             <div id="level">(battery level unknown)</div>
@@ -390,20 +514,12 @@ height="1px"
 
             <div id="info" class="trinfo"></div>
 
-            <iframe id="iframe" class="framed" name="iframe"
-width="470px" height="90%"
-allowtransparency="true"
-style="z-index: 10;"
-style="background: #FFFFFF;"
-frameborder="1"
-                allowfullscreen="true"
-                webkitallowfullscreen="true"
-                msallowfullscreen="true"
-                mozallowfullscreen="true"
+            <iframe id="iframe" class="framed" name="iframe" width="470px" height="90%" allowtransparency="true"
+                style="z-index: 10;" style="background: #FFFFFF;" frameborder="1" allowfullscreen="true"
+                webkitallowfullscreen="true" msallowfullscreen="true" mozallowfullscreen="true"
                 sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
                 allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-                src="https://pygame-web.github.io/archives/0.9/empty.html"
-                scrolling="yes">
+                src="https://pygame-web.github.io/archives/0.9/empty.html" scrolling="yes">
             </iframe>
         </div>
 
@@ -421,69 +537,106 @@ frameborder="1"
 
     <script type="application/javascript">
 
-    async function custom_onload(debug_hidden) {
-        // this is called before anything python is loaded
-        // make your js customization here
-        console.log(__FILE__, "custom_onload")
+        async function custom_onload(debug_hidden) {
+            // this is called before anything python is loaded
+            // make your js customization here
+            console.log(__FILE__, "custom_onload")
 
-        pyconsole.hidden = debug_hidden
-        system.hidden = debug_hidden
-        transfer.hidden = debug_hidden
-        info.hidden = debug_hidden
-        box.hidden =  debug_hidden
+            pyconsole.hidden = debug_hidden
+            system.hidden = debug_hidden
+            transfer.hidden = debug_hidden
+            info.hidden = debug_hidden
+            box.hidden = debug_hidden
 
-    }
+        }
 
-    function custom_prerun(){
-        // no python main and no (MEMFS + VFS) yet.
-        console.log(__FILE__, "custom_prerun")
+        function custom_prerun() {
+            // no python main and no (MEMFS + VFS) yet.
+            console.log(__FILE__, "custom_prerun")
 
-    }
+        }
 
-    function custom_postrun(){
-        // python main and no VFS filesystem yet.
-        console.log(__FILE__, "custom_postrun")
+        function custom_postrun() {
+            // python main and no VFS filesystem yet.
+            console.log(__FILE__, "custom_postrun")
 
-        // prevent ff horizontal scroll
-        window.addEventListener("keydown", function(e) {
-            if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
-                if (!python.config.debug)
-                    e.preventDefault();
+            // Hide loading overlay with fade out
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.transition = 'opacity 0.5s ease-out';
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
             }
-        }, false);
 
-    }
+            // prevent ff horizontal scroll
+            window.addEventListener("keydown", function (e) {
+                if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(e.code) > -1) {
+                    if (!python.config.debug)
+                        e.preventDefault();
+                }
+            }, false);
 
-    function debug() {
-        // allow to gain access to dev tools from js console
-        // but only on desktop. difficult to reach when in iframe
-        python.config.debug = true
-        custom_onload(false)
-        Module.PyRun_SimpleString("shell.uptime()")
-        window_resize()
-    }
+        }
 
-    function info_inline(data){
-        document.getElementById("info").innerHTML = data
-    }
+        function debug() {
+            // allow to gain access to dev tools from js console
+            // but only on desktop. difficult to reach when in iframe
+            python.config.debug = true
+            custom_onload(false)
+            Module.PyRun_SimpleString("shell.uptime()")
+            window_resize()
+        }
 
-    function info_online(url) {
-        // display info about current APK
-        fetch( url /*, options */)
-            .then((response) => response.text())
-            .then((html) => {
-                info_inline(html);
-        })
-        .catch((error) => {
-            console.warn(error);
-        });
-    }
+        function info_inline(data) {
+            document.getElementById("info").innerHTML = data
+        }
 
-    function frame_online(url) {
-        window.frames["iframe"].location = url;
-    }
+        function info_online(url) {
+            // display info about current APK
+            fetch(url /*, options */)
+                .then((response) => response.text())
+                .then((html) => {
+                    info_inline(html);
+                })
+                .catch((error) => {
+                    console.warn(error);
+                });
+        }
+
+        function frame_online(url) {
+            window.frames["iframe"].location = url;
+        }
+
+        // Loading overlay helper functions
+        function updateLoadingStatus(message) {
+            const statusEl = document.getElementById('loading-status');
+            if (statusEl) {
+                statusEl.textContent = message;
+            }
+        }
+
+        function updateLoadingProgress(percent) {
+            const progressEl = document.getElementById('progress');
+            if (progressEl) {
+                progressEl.value = percent;
+            }
+        }
+
+        function hideLoadingOverlay() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.transition = 'opacity 0.5s ease-out';
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+            }
+        }
 
     </script>
 
 </body>
+
 </html>
