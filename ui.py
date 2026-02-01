@@ -17,7 +17,7 @@ from config import (
     COLOR_BUTTON, COLOR_BUTTON_HOVER, COLOR_BUTTON_ACTIVE, COLOR_BUTTON_BORDER,
     COLOR_DROPDOWN_BG, COLOR_UI_BG, COLOR_PANEL_BG,
     COLOR_SUCCESS, COLOR_FAILURE, COLOR_WARNING,
-    ALGORITHM_NAMES, SPEED_OPTIONS,
+    UNINFORMED_ALGORITHMS, INFORMED_ALGORITHMS, SPEED_OPTIONS,
     LEFT_GRID_X, RIGHT_GRID_X,
     STATS_Y, STATS_HEIGHT
 )
@@ -523,9 +523,9 @@ class UI:
         self.btn_start = Button(420, btn_y, 110, 32, "Start Race", 20)
         self.btn_reset = Button(540, btn_y, 80, 32, "Reset", 20)
         
-        # Create dropdowns - on left and right sides
-        self.dropdown_algo_a = Dropdown(20, btn_y, 100, 32, ALGORITHM_NAMES, 0)  # BFS
-        self.dropdown_algo_b = Dropdown(905, btn_y, 100, 32, ALGORITHM_NAMES, 4)  # A*
+        # Create dropdowns - left shows uninformed, right shows informed
+        self.dropdown_algo_a = Dropdown(130, btn_y, 100, 32, UNINFORMED_ALGORITHMS, 0)  # BFS
+        self.dropdown_algo_b = Dropdown(905, btn_y, 100, 32, INFORMED_ALGORITHMS, 1)  # A*
         
         # Create speed slider - between buttons and right dropdown
         self.slider_speed = Slider(650, btn_y + 2, 140, 28, SPEED_OPTIONS)
@@ -608,12 +608,13 @@ class UI:
         title_rect = title.get_rect(centerx=self.width // 2, y=12)
         self.screen.blit(title, title_rect)
         
-        # Draw labels for dropdowns
-        label_a = self.font_label.render("Algorithm A:", True, COLOR_TEXT_DIM)
-        self.screen.blit(label_a, (20, 38))
+        # Draw labels for dropdowns (prominent, left of each dropdown)
+        dropdown_label_font = pygame.font.Font(None, 26)
+        label_a = dropdown_label_font.render("Uninformed:", True, COLOR_TEXT_HIGHLIGHT)
+        self.screen.blit(label_a, (20, 58))
         
-        label_b = self.font_label.render("Algorithm B:", True, COLOR_TEXT_DIM)
-        self.screen.blit(label_b, (905, 38))
+        label_b = dropdown_label_font.render("Informed:", True, COLOR_TEXT_HIGHLIGHT)
+        self.screen.blit(label_b, (820, 58))
         
         # Draw speed label
         speed_label = self.font_label.render("Speed:", True, COLOR_TEXT_DIM)

@@ -145,6 +145,20 @@ ALGORITHM_NAMES = [
     "IDA*"
 ]
 
+# Uninformed Search Algorithms (no heuristic)
+UNINFORMED_ALGORITHMS = [
+    "BFS",    # Breadth-First Search
+    "DFS",    # Depth-First Search
+    "UCS"     # Uniform Cost Search
+]
+
+# Informed Search Algorithms (use heuristic)
+INFORMED_ALGORITHMS = [
+    "Greedy",  # Greedy Best-First Search
+    "A*",      # A* Search
+    "IDA*"     # Iterative Deepening A*
+]
+
 # Algorithm descriptions for display
 ALGORITHM_DESCRIPTIONS = {
     "BFS": "Breadth-First Search - Explores by level, FIFO queue",
@@ -154,3 +168,4 @@ ALGORITHM_DESCRIPTIONS = {
     "A*": "A* Search - Optimal with f = g + h",
     "IDA*": "Iterative Deepening A* - Memory-efficient A*"
 }
+
