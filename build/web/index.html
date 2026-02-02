@@ -201,8 +201,8 @@ async def custom_site():
     pygame.display.flip()
 
     platform.window.updateLoadingStatus("Starting game...")
-    platform.window.updateLoadingProgress(100)
-    platform.window.hideLoadingOverlay()
+    platform.window.updateLoadingProgress(95)
+    # hideLoadingOverlay is called from main.py after first frame renders
 
     await shell.runpy(main, callback=ui_callback)
 

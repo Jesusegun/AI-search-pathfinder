@@ -412,6 +412,15 @@ class PathfindingArena:
 async def main():
     """Application entry point (async for Pygbag)."""
     arena = PathfindingArena()
+    
+    # Hide loading overlay now that game is ready to render
+    try:
+        import platform
+        platform.window.updateLoadingProgress(100)
+        platform.window.hideLoadingOverlay()
+    except Exception:
+        pass  # Not running in browser
+    
     await arena.run()
 
 
