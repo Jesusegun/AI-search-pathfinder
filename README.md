@@ -1,114 +1,110 @@
-# AI Pathfinding Racing Arena
+# Pathfinding Algorithm Visualizer
 
-A visual educational tool demonstrating uninformed and informed search algorithms through competitive split-screen racing.
+A pygame app that lets you watch different pathfinding algorithms race against each other on the same maze.
 
-## Overview
+## What it does
 
-This application allows you to compare how different pathfinding algorithms perform on the same maze. Two algorithms race simultaneously on identical mazes in a split-screen view, providing direct performance comparison.
+Pick two algorithms and watch them race side-by-side on identical mazes. You can see which one finds the path faster and which explores fewer nodes. It's pretty cool to see how algorithms like A* are way smarter than BFS when there's mud on the ground.
 
-## Features
+## Algorithms
 
-- **6 Pathfinding Algorithms:**
-  - **BFS** (Breadth-First Search) - Uninformed, explores by level
-  - **DFS** (Depth-First Search) - Uninformed, explores depth first
-  - **UCS** (Uniform Cost Search) - Uninformed, considers path cost
-  - **Greedy** (Greedy Best-First) - Informed, uses heuristic only
-  - **A*** (A* Search) - Informed, optimal with f = g + h
-  - **IDA*** (Iterative Deepening A*) - Memory-efficient A*
+Implemented 6 algorithms for the project:
 
-- **Terrain System:**
-  - **Floor** (white) - Cost: 1
-  - **Mud** (brown) - Cost: 5
-  - **Wall** (dark) - Impassable
+**Uninformed Search:**
+- BFS - explores level by level
+- DFS - goes deep first
+- UCS - picks lowest cost path
 
-- **Visualization:**
-  - Split-screen racing
-  - Particle trail effects
-  - Real-time statistics
-  - Winner declaration
+**Informed Search:**
+- Greedy - rushes toward the goal (not always optimal)
+- A* - the smart one, uses cost + heuristic
+- IDA* - like A* but uses less memory
+
+The maze has three terrain types: normal floor (cost 1), mud (cost 5), and walls. Some algorithms ignore terrain cost and just count steps, which can lead to bad paths.
 
 ## Installation
 
-1. Ensure Python 3.8+ is installed
+You need Python 3.8 or higher.
 
-2. Install dependencies:
+Install the required packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Usage
+## How to run
 
-Run the application:
 ```bash
 python main.py
 ```
 
-### Controls
+## Web build (PyBag) + GitHub Pages
 
-| Control | Action |
-|---------|--------|
-| Algorithm Dropdowns | Select algorithms for left/right sides |
-| Generate Maze | Create a new random maze |
-| Start Race | Begin the race between selected algorithms |
-| Reset | Stop current race and reset |
-| Speed Slider | Adjust animation speed (Slow/Normal/Fast/Instant) |
-| Space | Toggle Start/Reset |
-| G | Generate new maze |
-| R | Reset race |
-| ESC | Exit application |
+This project uses `pygbag` to package the game for web and serves it from `docs/` (GitHub Pages).
 
-## Understanding the Results
+Build and sync web files:
 
-### Key Metrics
-
-- **Nodes Explored**: How many cells the algorithm examined
-- **Path Length**: Number of steps in the final path
-- **Path Cost**: Total cost considering terrain (floor=1, mud=5)
-- **Time**: Execution time
-
-### Algorithm Comparison
-
-| Algorithm | Complete | Optimal | Best For |
-|-----------|----------|---------|----------|
-| BFS | ✓ | Steps only | Finding shortest path (steps) |
-| DFS | ✗ | ✗ | Memory-constrained scenarios |
-| UCS | ✓ | ✓ (cost) | Finding lowest-cost path |
-| Greedy | ✗ | ✗ | Fast but potentially suboptimal |
-| A* | ✓ | ✓ | Best overall performance |
-| IDA* | ✓ | ✓ | Memory-efficient optimal search |
-
-### Terrain Cost Demo
-
-Try racing **BFS vs A*** on a maze with mud patches:
-- BFS may plow through mud if that path has fewer steps
-- A* intelligently routes around expensive terrain
-- Compare the **Path Cost** to see the difference!
-
-## Project Structure
-
-```
-pathfinding-arena/
-├── main.py           # Application entry point
-├── config.py         # Configuration constants
-├── grid.py           # Grid and cell classes
-├── maze_generator.py # Maze generation algorithms
-├── algorithms.py     # All 6 pathfinding algorithms
-├── visualizer.py     # Rendering and animation
-├── ui.py             # User interface components
-├── utils.py          # Helper functions
-├── requirements.txt  # Dependencies
-└── README.md         # This file
+```bash
+python build_web.py
 ```
 
-## Academic Context
+Useful options:
 
-This project demonstrates concepts from AI search algorithms:
-- State space vs search tree
-- Fringe/frontier management
-- Heuristic functions (Manhattan distance)
-- Completeness and optimality
-- Time and space complexity
+- `python build_web.py --replace-index` to replace `docs/index.html` with the generated one.
+- `python build_web.py --no-clean-docs` to skip stale-file cleanup in `docs/`.
 
-## License
+Typical deploy flow:
 
-MIT License - Educational use encouraged.
+1. Update your game code (for example `main.py`).
+2. Run `python build_web.py`.
+3. Commit source changes + `docs/` artifacts.
+4. Push to `main`.
+5. In GitHub Pages settings, use branch `main` and folder `/docs`.
+
+## Controls
+
+- Use the dropdowns to pick algorithms for each side
+- "Generate Maze" makes a new random maze
+- "Start Race" starts the race
+- Speed slider controls how fast it runs (instant mode is useful for testing)
+- Spacebar to start/reset
+- G for new maze
+- ESC to quit
+
+## Interesting things to try
+
+**BFS vs A* with mud:**
+BFS doesn't care about terrain cost so it might walk through a bunch of mud if it's fewer steps. A* actually avoids the mud and finds a cheaper path. You can see this clearly in the "Path Cost" stat.
+
+**Greedy vs A*:**
+Greedy is fast but sometimes gets stuck or finds bad paths. A* is almost always better.
+
+**DFS:**
+DFS is interesting because it just picks a direction and goes. Sometimes it gets lucky, sometimes it explores way too much.
+
+## Stats explained
+
+- **Nodes Explored** - how many cells the algorithm looked at
+- **Path Length** - number of steps in the final path  
+- **Path Cost** - total cost (mud costs more)
+- **Time** - how long it took
+
+The winner is determined by lowest path cost. If costs are equal, then by fewest nodes explored.
+
+## Files
+
+```
+main.py           - main entry point and game loop
+config.py         - all the constants and colors
+grid.py           - grid/cell classes
+maze_generator.py - generates random mazes
+algorithms.py     - all 6 search algorithms
+visualizer.py     - draws everything
+ui.py             - buttons, dropdowns, stats panels
+utils.py          - helper functions (heuristics, path reconstruction)
+```
+
+## Notes
+
+The algorithms are implemented as generators so they can yield their state at each step for visualization. This makes the racing animation possible.
+
+For the course project, I focused on comparing uninformed vs informed search and showing how heuristics make a huge difference. A* consistently beats BFS/DFS on most mazes, especially with varied terrain costs.

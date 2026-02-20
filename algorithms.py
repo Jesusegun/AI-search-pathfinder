@@ -1,34 +1,3 @@
-"""
-Pathfinding algorithms for the racing arena.
-
-This module implements 6 search algorithms as generators for step-by-step
-visualization during racing:
-
-Uninformed (Blind) Search:
-- BFS: Breadth-First Search (FIFO queue)
-- DFS: Depth-First Search (LIFO stack)
-- UCS: Uniform Cost Search (priority queue by g)
-
-Informed (Heuristic) Search:
-- Greedy: Greedy Best-First Search (priority by h)
-- A*: A* Search (priority by f = g + h)
-- IDA*: Iterative Deepening A* (depth-limited with f cutoff)
-
-Each algorithm yields state dictionaries for visualization:
-{
-    'current': Current cell being expanded,
-    'frontier': List of cells in frontier/fringe,
-    'explored': Set of explored cells,
-    'came_from': Parent pointer dictionary,
-    'g_scores': Cost-to-reach dictionary (if applicable),
-    'found': Boolean indicating if goal found,
-    'path': Final path (when found),
-    'iteration': Step number
-}
-
-@author: CPS 170 AI Course Project
-"""
-
 from collections import deque
 import heapq
 import time
@@ -37,22 +6,7 @@ from utils import heuristic, reconstruct_path, calculate_path_cost
 
 
 class AlgorithmResult:
-    """
-    Container for algorithm execution results.
-    
-    Attributes:
-        path: List of cells from start to goal
-        explored: Set of all explored cells
-        frontier_max: Maximum frontier size during execution
-        nodes_explored: Total number of nodes expanded
-        path_cost: Total cost of the path
-        time_taken: Execution time in seconds
-        found: Whether a path was found
-        algorithm_name: Name of the algorithm
-    """
-    
     def __init__(self, algorithm_name):
-        """Initialize result container."""
         self.algorithm_name = algorithm_name
         self.path = []
         self.explored = set()
@@ -64,23 +18,7 @@ class AlgorithmResult:
         self.iterations = 0
 
 
-# =============================================================================
-# UNINFORMED SEARCH ALGORITHMS
-# =============================================================================
-
 def bfs_generator(grid):
-    """
-    Breadth-First Search generator.
-    
-    Explores nodes in FIFO order (level by level).
-    Complete: YES
-    Optimal: YES (for uniform cost)
-    Time: O(b^d)
-    Space: O(b^d)
-    
-    @param grid: Grid object with start and goal
-    @yields: State dictionary for visualization
-    """
     start = grid.start
     goal = grid.goal
     
@@ -92,14 +30,12 @@ def bfs_generator(grid):
     while frontier:
         current = frontier.popleft()
         
-        # Skip if already explored (handles duplicates in frontier)
         if current in explored:
             continue
         
         explored.add(current)
         iteration += 1
         
-        # Yield state for visualization
         yield {
             'current': current,
             'frontier': list(frontier),
@@ -111,7 +47,6 @@ def bfs_generator(grid):
             'frontier_size': len(frontier)
         }
         
-        # Goal check
         if current == goal:
             path = reconstruct_path(came_from, start, goal)
             yield {
@@ -127,13 +62,11 @@ def bfs_generator(grid):
             }
             return
         
-        # Expand neighbors
         for neighbor in grid.get_neighbors(current):
             if neighbor not in came_from:
                 came_from[neighbor] = current
                 frontier.append(neighbor)
     
-    # No path found
     yield {
         'current': None,
         'frontier': [],
@@ -147,18 +80,6 @@ def bfs_generator(grid):
 
 
 def dfs_generator(grid):
-    """
-    Depth-First Search generator.
-    
-    Explores deepest nodes first using LIFO stack.
-    Complete: NO (can loop infinitely)
-    Optimal: NO
-    Time: O(b^m)
-    Space: O(bm) - much better than BFS
-    
-    @param grid: Grid object with start and goal
-    @yields: State dictionary for visualization
-    """
     start = grid.start
     goal = grid.goal
     
@@ -168,7 +89,7 @@ def dfs_generator(grid):
     iteration = 0
     
     while frontier:
-        current = frontier.pop()  # Pop from end (LIFO)
+        current = frontier.pop()
         
         if current in explored:
             continue
@@ -202,7 +123,6 @@ def dfs_generator(grid):
             }
             return
         
-        # Add neighbors in reverse order so first direction is explored first
         neighbors = grid.get_neighbors(current)
         for neighbor in reversed(neighbors):
             if neighbor not in explored and neighbor not in came_from:
@@ -222,22 +142,9 @@ def dfs_generator(grid):
 
 
 def ucs_generator(grid):
-    """
-    Uniform Cost Search generator.
-    
-    Expands node with lowest path cost g(n).
-    Complete: YES
-    Optimal: YES (finds lowest-cost path)
-    Time: O(b^(C*/ε))
-    Space: O(b^(C*/ε))
-    
-    @param grid: Grid object with start and goal
-    @yields: State dictionary for visualization
-    """
     start = grid.start
     goal = grid.goal
     
-    # Priority queue: (cost, tie-breaker, node)
     counter = 0
     frontier = [(0, counter, start)]
     came_from = {start: None}
@@ -305,22 +212,7 @@ def ucs_generator(grid):
     }
 
 
-# =============================================================================
-# INFORMED SEARCH ALGORITHMS
-# =============================================================================
-
 def greedy_generator(grid):
-    """
-    Greedy Best-First Search generator.
-    
-    Expands node that appears closest to goal (h only).
-    Complete: NO (can get stuck)
-    Optimal: NO (ignores path cost)
-    Fast but risky.
-    
-    @param grid: Grid object with start and goal
-    @yields: State dictionary for visualization
-    """
     start = grid.start
     goal = grid.goal
     
@@ -387,23 +279,12 @@ def greedy_generator(grid):
 
 
 def astar_generator(grid):
-    """
-    A* Search generator.
-    
-    Expands node with lowest f(n) = g(n) + h(n).
-    Complete: YES
-    Optimal: YES (with admissible heuristic)
-    The gold standard of informed search.
-    
-    @param grid: Grid object with start and goal
-    @yields: State dictionary for visualization
-    """
     start = grid.start
     goal = grid.goal
     
     counter = 0
     h_start = heuristic(start, goal)
-    frontier = [(h_start, counter, start)]  # f = g + h, initially g=0
+    frontier = [(h_start, counter, start)]
     came_from = {start: None}
     g_scores = {start: 0}
     explored = set()
@@ -476,18 +357,6 @@ def astar_generator(grid):
 
 
 def idastar_generator(grid):
-    """
-    Iterative Deepening A* generator.
-    
-    Memory-efficient variant of A*.
-    Uses depth-limited search with f-cost cutoff.
-    Complete: YES
-    Optimal: YES
-    Space: O(d) - LINEAR!
-    
-    @param grid: Grid object with start and goal
-    @yields: State dictionary for visualization
-    """
     start = grid.start
     goal = grid.goal
     
@@ -499,7 +368,6 @@ def idastar_generator(grid):
     while True:
         ida_iteration += 1
         
-        # Run depth-limited search with current threshold
         result_gen = _ida_search(
             grid, [start], 0, threshold, goal,
             explored_total, iteration
@@ -554,7 +422,6 @@ def idastar_generator(grid):
             return
         
         if min_exceeded == float('inf'):
-            # No path exists
             yield {
                 'current': None,
                 'frontier': [],
@@ -569,23 +436,10 @@ def idastar_generator(grid):
             }
             return
         
-        # Increase threshold for next iteration
         threshold = min_exceeded
 
 
 def _ida_search(grid, path, g, threshold, goal, explored_total, iteration):
-    """
-    Recursive helper for IDA*.
-    
-    @param grid: Grid object
-    @param path: Current path (list of cells)
-    @param g: Cost to reach current node
-    @param threshold: Current f-cost threshold
-    @param goal: Goal cell
-    @param explored_total: Set of all explored cells
-    @param iteration: Current iteration count
-    @yields: State dictionaries
-    """
     current = path[-1]
     f = g + heuristic(current, goal)
     
@@ -624,7 +478,7 @@ def _ida_search(grid, path, g, threshold, goal, explored_total, iteration):
     min_exceeded = float('inf')
     
     for neighbor in grid.get_neighbors(current):
-        if neighbor not in path:  # Avoid cycles within current path
+        if neighbor not in path:
             path.append(neighbor)
             new_g = g + grid.get_cost(current, neighbor)
             
@@ -652,10 +506,6 @@ def _ida_search(grid, path, g, threshold, goal, explored_total, iteration):
             'iteration': iteration
         }
 
-
-# =============================================================================
-# ALGORITHM REGISTRY
-# =============================================================================
 
 ALGORITHMS = {
     "BFS": bfs_generator,
@@ -719,12 +569,6 @@ ALGORITHM_INFO = {
 
 
 def get_algorithm(name):
-    """
-    Get algorithm generator function by name.
-    
-    @param name: Algorithm name (e.g., "A*", "BFS")
-    @return: Generator function or None if not found
-    """
     return ALGORITHMS.get(name)
 
 

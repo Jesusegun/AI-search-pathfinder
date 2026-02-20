@@ -1,22 +1,3 @@
-"""
-AI Pathfinding Racing Arena - Main Application
-
-A visual educational tool demonstrating uninformed and informed search
-algorithms through competitive split-screen racing.
-
-Usage:
-    python main.py
-
-Controls:
-    - Select algorithms from dropdowns
-    - Click "Generate Maze" for new random maze
-    - Click "Start Race" to begin competition
-    - Use speed slider to control animation
-    - Click "Reset" to stop and reset
-
-@author: CPS 170 AI Course Project
-"""
-
 import pygame
 import sys
 import time
@@ -38,25 +19,7 @@ from utils import calculate_path_cost
 
 
 class RaceState:
-    """
-    Manages the state of a racing algorithm.
-    
-    Attributes:
-        name: Algorithm name
-        generator: Algorithm generator instance
-        state: Current state dictionary from generator
-        finished: Whether algorithm has completed
-        start_time: When this algorithm started
-        end_time: When this algorithm finished
-    """
-    
     def __init__(self, name, generator):
-        """
-        Initialize race state.
-        
-        @param name: Algorithm name
-        @param generator: Algorithm generator function
-        """
         self.name = name
         self.generator = generator
         self.state = None
@@ -69,11 +32,6 @@ class RaceState:
         self.nodes_explored = 0
     
     def step(self):
-        """
-        Execute one step of the algorithm.
-        
-        @return: True if step successful, False if finished
-        """
         if self.finished:
             return False
         
@@ -98,7 +56,6 @@ class RaceState:
             return False
     
     def get_time(self):
-        """Get elapsed time."""
         if self.finished:
             return self.end_time - self.start_time
         elif self.start_time > 0:
@@ -107,14 +64,7 @@ class RaceState:
 
 
 class PathfindingArena:
-    """
-    Main application class for the pathfinding racing arena.
-    
-    Manages the game loop, event handling, and race coordination.
-    """
-    
     def __init__(self):
-        """Initialize the application."""
         pygame.init()
         pygame.display.set_caption(TITLE)
         
@@ -141,13 +91,11 @@ class PathfindingArena:
         self.running = True
     
     def generate_new_maze(self):
-        """Generate a new random maze."""
         self.grid = generate_maze(GRID_WIDTH, GRID_HEIGHT, maze_type="open")
         self.visualizer.clear_particles()
         self.ui.reset_stats()
     
     def start_race(self):
-        """Start a new race between selected algorithms."""
         if self.racing:
             return
         
@@ -174,11 +122,8 @@ class PathfindingArena:
         self.ui.update_stats_b(name=algo_b, status='Running')
         self.ui.set_racing(True)
         self.ui.winner_banner.hide()
-        
-        # Clear particles
         self.visualizer.clear_particles()
         
-        # Set speed
         speed = self.ui.get_speed()
         if speed == SPEED_INSTANT:
             self.step_interval = 0
@@ -191,7 +136,6 @@ class PathfindingArena:
         self.last_step_time = time.perf_counter()
     
     def reset_race(self):
-        """Reset the current race."""
         self.racing = False
         self.race_a = None
         self.race_b = None
@@ -200,20 +144,17 @@ class PathfindingArena:
         self.visualizer.clear_particles()
     
     def step_race(self):
-        """Execute race steps based on speed setting."""
         if not self.racing:
             return
         
         current_time = time.perf_counter()
         
-        # Check if enough time has passed for next step
         if self.step_interval > 0:
             elapsed = current_time - self.last_step_time
             if elapsed < self.step_interval:
                 return
             self.last_step_time = current_time
         
-        # Execute steps
         for _ in range(self.steps_per_frame):
             stepped_a = False
             stepped_b = False
@@ -238,22 +179,18 @@ class PathfindingArena:
                             COLOR_B_EXPLORED[:3], 'B'
                         )
             
-            # Update stats
             self._update_race_stats()
             
-            # Check if race is complete
             if self.race_a.finished and self.race_b.finished:
                 self._finish_race()
                 return
             
-            # For instant mode, continue until done
             if self.step_interval == 0:
                 continue
             else:
                 break
     
     def _update_race_stats(self):
-        """Update UI stats during race."""
         if self.race_a:
             self.ui.update_stats_a(
                 nodes_explored=self.race_a.nodes_explored,
@@ -273,11 +210,9 @@ class PathfindingArena:
             )
     
     def _finish_race(self):
-        """Handle race completion and determine winner."""
         self.racing = False
         self.ui.set_racing(False)
         
-        # Determine winner
         a_found = self.race_a.found_path
         b_found = self.race_b.found_path
         
@@ -288,7 +223,6 @@ class PathfindingArena:
         elif not b_found:
             self.ui.winner_banner.show_winner(self.race_a.name, "B found no path")
         else:
-            # Both found paths - compare metrics
             a_cost = self.race_a.path_cost
             b_cost = self.race_b.path_cost
             a_nodes = self.race_a.nodes_explored
@@ -318,7 +252,6 @@ class PathfindingArena:
                 self.ui.winner_banner.show_tie("Same cost and nodes explored")
     
     def handle_events(self):
-        """Handle pygame events."""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -339,7 +272,6 @@ class PathfindingArena:
                 elif event.key == pygame.K_r:
                     self.reset_race()
             
-            # Handle UI events
             action = self.ui.handle_event(event)
             if action == "generate":
                 if not self.racing:
@@ -350,19 +282,12 @@ class PathfindingArena:
                 self.reset_race()
     
     def update(self):
-        """Update game state."""
-        # Step race if running
         self.step_race()
-        
-        # Update particles
         self.visualizer.update_particles()
     
     def render(self):
-        """Render the frame."""
-        # Clear screen
         self.screen.fill(COLOR_BG)
         
-        # Draw grids
         if self.racing and self.race_a and self.race_b:
             self.visualizer.draw_algorithm_race(
                 self.grid,
@@ -372,11 +297,9 @@ class PathfindingArena:
                 self.race_b.finished
             )
         else:
-            # Draw static grids when not racing
             self.visualizer.draw_grid(self.grid, LEFT_GRID_X, GRID_Y)
             self.visualizer.draw_grid(self.grid, RIGHT_GRID_X, GRID_Y)
             
-            # If race finished, draw final paths
             if self.race_a and self.race_a.finished and self.race_a.path:
                 self.visualizer.draw_path(
                     self.race_a.path, LEFT_GRID_X, GRID_Y,
@@ -388,29 +311,22 @@ class PathfindingArena:
                     (255, 60, 60)
                 )
         
-        # Draw particles
         self.visualizer.draw_particles()
-        
-        # Draw UI
         self.ui.draw()
-        
-        # Update display
         pygame.display.flip()
     
     async def run(self):
-        """Main game loop (async for Pygbag web compatibility)."""
         while self.running:
             self.handle_events()
             self.update()
             self.render()
             self.clock.tick(FPS)
-            await asyncio.sleep(0)  # Required for Pygbag
+            await asyncio.sleep(0)
         
         pygame.quit()
 
 
 async def main():
-    """Application entry point (async for Pygbag)."""
     arena = PathfindingArena()
     await arena.run()
 
